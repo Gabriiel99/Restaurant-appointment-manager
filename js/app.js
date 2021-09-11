@@ -31,7 +31,6 @@ window.onload = () =>{ //arrow function
 
 
 // Eventos
-
 function eventListeners() {
     nombreInput.addEventListener('change', datosCita);
     emailInput.addEventListener('change', datosCita);
@@ -124,7 +123,7 @@ class UI {
             const cursor = e.target.result;
 
             if(cursor){
-                const {nombre, email, telefono, fecha, hora, observaciones, id } = cursor.value;
+            const {nombre, email, telefono, fecha, hora, observaciones, id } = cursor.value;
 
             const divCita = document.createElement('div');
             divCita.classList.add('cita', 'p-3');
@@ -199,7 +198,6 @@ class UI {
 
 
 const administrarCitas = new Citas();
-console.log(administrarCitas);
 const ui = new UI(administrarCitas);
 
 function nuevaCita(e) {
@@ -290,9 +288,20 @@ function reiniciarObjeto() {
 
 
 function eliminarCita(id) {
-    administrarCitas.eliminarCita(id);
+    
+    const transaction = DB.transaction(['citas'], 'readwrite');
+    const objectStore = transaction.objectStore('citas');
 
-    ui.imprimirCitas()
+    objectStore.delete(id);
+
+    transaction.oncomplete = () =>{
+        console.log(`Cita ${id} eliminada`);
+        ui.imprimirCitas();
+    }
+
+    transaction.onerror = () =>{
+        console.log('error');
+    }
 }
 
 function cargarEdicion(cita) {
