@@ -103,14 +103,28 @@ class UI {
         }, 3000);
    }
 
-   imprimirCitas({citas}) { // Se puede aplicar destructuring desde la función...
+   imprimirCitas() {
        
         this.limpiarHTML();
 
         this.textoHeading(citas);
+        
+        //Leer el contenido de la base de datos
+        const objectStore = DB.transaction('citas').objectStore('citas');
 
-        citas.forEach(cita => {
-            const {nombre, email, telefono, fecha, hora, observaciones, id } = cita;
+        const fnTextoHeading = this.textoHeading;
+
+        const total = objectStore.count();
+        total.onsuccess = function (){
+            fnTextoHeading(total.result);
+        }
+
+        objectStore.openCursor().onsuccess = function(e){
+            
+            const cursor = e.target.result;
+
+            if(cursor){
+                const {nombre, email, telefono, fecha, hora, observaciones, id } = cursor.value;
 
             const divCita = document.createElement('div');
             divCita.classList.add('cita', 'p-3');
@@ -160,11 +174,15 @@ class UI {
             divCita.appendChild(btnEditar)
 
             contenedorCitas.appendChild(divCita);
-        });    
+
+            //Va al siguiente elemento
+            cursor.continue();
+            }
+        }
    }
 
-   textoHeading(citas) {
-        if(citas.length > 0 ) {
+   textoHeading(resultado) {
+        if(resultado > 0 ) {
             heading.textContent = 'Administra tus Citas '
         } else {
             heading.textContent = 'No hay Citas, comienza creando una'
@@ -234,7 +252,7 @@ function nuevaCita(e) {
 
 
     // Imprimir el HTML de citas
-    ui.imprimirCitas(administrarCitas);
+    ui.imprimirCitas();
 
     // Reinicia el objeto para evitar futuros problemas de validación
     reiniciarObjeto();
@@ -258,7 +276,7 @@ function reiniciarObjeto() {
 function eliminarCita(id) {
     administrarCitas.eliminarCita(id);
 
-    ui.imprimirCitas(administrarCitas)
+    ui.imprimirCitas()
 }
 
 function cargarEdicion(cita) {
@@ -303,7 +321,8 @@ function crearDB(){
 
         DB = crearDB.result;
 
-        console.log(DB);
+        //Mostrar Citas al cargar con indexDB listo
+        ui.imprimirCitas();
     }
 
     //Definir el schema
